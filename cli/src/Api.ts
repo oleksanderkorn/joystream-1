@@ -1,12 +1,20 @@
 import BN from 'bn.js'
 import { createType, types } from '@joystream/types'
+
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { SubmittableExtrinsic, AugmentedQuery } from '@polkadot/api/types'
 import { formatBalance } from '@polkadot/util'
-import { Balance, LockIdentifier, StakingLedger, ElectionStatus } from '@polkadot/types/interfaces'
+import {
+  BlockHash,
+  EventRecord,
+  Balance,
+  LockIdentifier,
+  StakingLedger,
+  ElectionStatus,
+} from '@polkadot/types/interfaces'
 import { KeyringPair } from '@polkadot/keyring/types'
 import { Codec, Observable } from '@polkadot/types/types'
-import { UInt, Option } from '@polkadot/types'
+import { Vec, UInt, Option } from '@polkadot/types'
 import {
   AccountSummary,
   WorkingGroups,
@@ -115,6 +123,15 @@ export default class Api {
     return accountsBalances
   }
 
+  async getBlockHash(blockNumber: number): Promise<BlockHash> {
+    const blockHash: BlockHash = await this._api.rpc.chain.getBlockHash(blockNumber)
+    return blockHash
+  }
+
+  async getEvents(blockHash: BlockHash): Promise<Vec<EventRecord>> {
+    return await this._api.query.system.events.at(blockHash)
+  }
+
   // Get on-chain data related to given account.
   // For now it's just account balances
   async getAccountSummary(accountAddresses: string): Promise<AccountSummary> {
@@ -152,13 +169,13 @@ export default class Api {
     return entries
   }
 
-  protected async blockHash(height: number): Promise<string> {
+  async blockHash(height: number): Promise<string> {
     const blockHash = await this._api.rpc.chain.getBlockHash(height)
 
     return blockHash.toString()
   }
 
-  protected async blockTimestamp(height: number): Promise<Date> {
+  async blockTimestamp(height: number): Promise<Date> {
     const blockTime = await this._api.query.timestamp.now.at(await this.blockHash(height))
 
     return new Date(blockTime.toNumber())
